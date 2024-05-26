@@ -7,6 +7,8 @@ namespace PrekoTarabu.Server.Credentials
         public int SmtpPort { get; private set; }
         public string Email { get; private set; }
         public string AppPassword { get; private set; }
+        
+        public string MailAdmin { get; private set; }
 
         public MailSender(IConfiguration configuration)
         {
@@ -14,6 +16,7 @@ namespace PrekoTarabu.Server.Credentials
             SmtpPort = int.Parse(configuration["SMTP_PORT"]);
             Email = configuration["MAIL_MAIL"];
             AppPassword = configuration["MAIL_PASSWORD"];
+            MailAdmin = configuration["MAIL_ADMIN"];
         }
     }
 }

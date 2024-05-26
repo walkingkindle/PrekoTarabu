@@ -10,10 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddTransient<IMailerService, MailerService>();
+builder.Services.AddScoped<MailerService>();
 
 
 var connectionStringBuilder = new SqlConnectionStringBuilder(builder.Configuration.
@@ -44,9 +45,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+app.UseCors("frontend");
+
+
 
 app.MapControllers();
-
-app.MapFallbackToFile("/index.html");
 
 app.Run();
