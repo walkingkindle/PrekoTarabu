@@ -18,16 +18,12 @@ export class MailService {
   }
 
 
-  sendMail(waitLister: WaitLister):Observable<HttpResponse<Result>> {
-    return this.httpClient.post<Result>(this.mailerUrl,waitLister, {observe:'response'})
+  sendMail(waitLister: WaitLister): Observable<HttpResponse<Result>> {
+    return this.httpClient.post<Result>(this.mailerUrl, waitLister, { observe: 'response' })
       .pipe(
-      map(response => {
-        return response
-      }),
-      catchError(
-        this.configService.handleError
-      )
-    )
-
+        catchError(
+          this.configService.handleError
+        )
+      );
   }
 }

@@ -17,4 +17,7 @@ import {ContactComponent} from "../contact/contact.component";
 })
 export class HomeComponent {
 
+
+
+
 }

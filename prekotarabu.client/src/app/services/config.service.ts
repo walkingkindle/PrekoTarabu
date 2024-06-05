@@ -10,12 +10,16 @@ export class ConfigService {
   constructor() { }
 
 
-  public handleError(error:HttpErrorResponse){
-    if(error.status === 0){
-      console.error('An error occurred:',error.message)
-    }else{
-      console.error(`Backend returned code ${error.status}, body was`,error)
+  handleError(error: HttpErrorResponse) {
+    let errorMessage = 'An unknown error occurred!';
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = `Error: ${error.error.message}`;
+    } else {
+      // Server-side error
+      errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
     }
-    return throwError(() => new Error('Something bad happened, please try again'))
+    return throwError(() => new Error(errorMessage));
   }
+
 }

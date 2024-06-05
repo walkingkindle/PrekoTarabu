@@ -19,7 +19,7 @@ builder.Services.AddScoped<MailerService>();
 
 var connectionStringBuilder = new SqlConnectionStringBuilder(builder.Configuration.
     GetConnectionString("connectionString"));
-connectionStringBuilder.Password = builder.Configuration["DbPassword"];
+connectionStringBuilder.Password = builder.Configuration["Credentials:DbPassword"];
 var connection = connectionStringBuilder.ConnectionString;
 builder.Services.AddDbContext<AppDbContext>(options =>
 {

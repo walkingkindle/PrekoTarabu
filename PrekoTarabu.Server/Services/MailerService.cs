@@ -3,6 +3,7 @@ using System.Net.Mail;
 using MailKit;
 using MailKit.Net.Pop3;
 using MimeKit;
+using MimeKit.Text;
 using PrekoTarabu.Server.Controllers;
 using PrekoTarabu.Server.Credentials;
 using PrekoTarabu.Server.Exceptions;
@@ -12,25 +13,33 @@ using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace PrekoTarabu.Server.Services;
 
-public class MailerService(IConfiguration configuration)
+public class MailerService
 {
-    MailSender _mailSender = new MailSender(configuration: configuration);
+    private readonly AppDbContext _dbContext;
+    private MailSender _mailSender;
 
-    //when someone joins the waitlist, An email is sent to the admin @his personal mail
-    //save from to the database and his name in Waitlist.dbo
-    //Then send him a reaching out email that we received his contribution
-    public Result SendEmail(MailerMessage mailerMessage)
+    public MailerService(AppDbContext dbContext, IConfiguration configuration)
+    {
+        _dbContext = dbContext;
+        _mailSender = new MailSender(configuration: configuration);
+    }
+
+    public void InitializeMailSender(IConfiguration configuration)
+    {
+        _mailSender = new MailSender(configuration: configuration);
+    }
+    
+    public Result SendEmail(MimeMessage mailerMessage)
     {
 
         
         using (var client = new SmtpClient())
         {
-            Console.WriteLine(_mailSender.AppPassword,_mailSender.Email,_mailSender.SmtpPort);
             client.Connect(_mailSender.SmtpServer,_mailSender.SmtpPort,false);
             client.Authenticate(_mailSender.Email, _mailSender.AppPassword);
             if (client.IsAuthenticated)
             {
-                client.Send(MakeMessage(mailerMessage));
+                client.Send(mailerMessage);
                 client.Disconnect(true);
             }
             else
@@ -46,33 +55,54 @@ public class MailerService(IConfiguration configuration)
     private MimeMessage MakeMessage(MailerMessage mailerMessage)
     {
         var message = new MimeMessage(); 
-        message.From.Add(new MailboxAddress(MailerMessage.Name,mailerMessage.From)); 
-        message.To.Add(new MailboxAddress(mailerMessage.To,mailerMessage.To));
-        message.Subject = mailerMessage.Subject;
-        message.Body = new TextPart("plain")
-        {
-            Text = mailerMessage.Message
-        };
-        return message;
 
+        message.From.Add(new MailboxAddress(mailerMessage.NameFrom, mailerMessage.From)); 
+        message.To.Add(new MailboxAddress(mailerMessage.To, mailerMessage.To));
+        message.Subject = mailerMessage.Subject;
+
+        // Construct the path to the HTML template file
+        string currentDirectory = Directory.GetCurrentDirectory();
+        string templatePath = Path.Combine(currentDirectory, "Assets", "mail.html");
+
+        // Ensure the template file exists
+        if (!File.Exists(templatePath))
+        {
+            throw new FileNotFoundException("The email template file was not found.", templatePath);
+        }
+
+        // Load the HTML template and replace placeholders
+        string emailBody = File.ReadAllText(templatePath).Replace("[Name]", mailerMessage.Name);
+
+        // Set the body of the email to HTML format
+        message.Body = new TextPart(TextFormat.Html)
+        {
+            Text = emailBody
+        };
+
+        return message;
     }
+
     
     //send message from Main email to admin email
     public Result NotifyAdmin(WaitListRequester requester)
     {
-            MailerMessage message = new MailerMessage()
-            {
-                From = _mailSender.Email,
-                To = _mailSender.MailAdmin,
-                Message = $"{requester.Message ?? "No message provided"}," +
-                          $" {requester.Email}",
-                Subject =
-                    "Looks like someone just joined your WaitList!!",
-                NameFrom = requester.Name
-            };
-            SendEmail(message);
-
-           return Result.Success();
+        MimeMessage message = new MimeMessage();
+           message.From.Add(new MailboxAddress("Aleksa",_mailSender.Email));
+           message.To.Add(new MailboxAddress("Aleksa", _mailSender.MailAdmin));
+           message.Subject = "Looks like someone subscribed to your WaitList";
+           message.Body = new TextPart(TextFormat.Plain)
+           {
+               Text = $" His Mail: {requester.Email}, His Message: {requester.Message ?? "No message"}"
+           };
+        SendEmail(message);
+        if (isWaitlisterAlreadySubscribed(requester.Email))
+        {
+            return Result.Failure(error: WaitListerErrors.UserExists);
+        }
+        
+        
+        
+        return Result.Success();
 
     }
 
@@ -82,14 +112,27 @@ public class MailerService(IConfiguration configuration)
         {
             From = _mailSender.Email,
             To = requester.Email,
-            Message = $"Hey thanks for subscribing I'll let you know when it gets here brooooooooooooooo",
+            Message = "",
             NameFrom = requester.Name,
-            Subject = "Reaching out"
+            Subject = "Reaching out",
+            Name = requester.Name
         };
-        SendEmail(message);
+        SendEmail(MakeMessage(message));
+        
+        if (isWaitlisterAlreadySubscribed(requester.Email))
+        {
+            return Result.Failure(error: WaitListerErrors.UserExists);
+        }
 
         return Result.Success();
     }
 
+    private bool isWaitlisterAlreadySubscribed(string waitlisterEmail)
+    {
+        bool waitListerExists = _dbContext.WaitListers.Any(c => c.HisHerMail == waitlisterEmail);
+        return waitListerExists;
+
+
+    }
     
 }

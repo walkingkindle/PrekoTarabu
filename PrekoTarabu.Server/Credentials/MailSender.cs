@@ -12,11 +12,11 @@ namespace PrekoTarabu.Server.Credentials
 
         public MailSender(IConfiguration configuration)
         {
-            SmtpServer = configuration["SMTP_SERVER"];
-            SmtpPort = int.Parse(configuration["SMTP_PORT"]);
-            Email = configuration["MAIL_MAIL"];
-            AppPassword = configuration["MAIL_PASSWORD"];
-            MailAdmin = configuration["MAIL_ADMIN"];
+            SmtpServer = configuration["Credentials:SMTP_SERVER"];
+            SmtpPort = int.Parse(configuration["Credentials:SMTP_PORT"]);
+            Email = configuration["Credentials:MAIL_MAIL"];
+            AppPassword = configuration["Credentials:MAIL_PASSWORD"];
+            MailAdmin = configuration["Credentials:MAIL_ADMIN"];
         }
     }
 }

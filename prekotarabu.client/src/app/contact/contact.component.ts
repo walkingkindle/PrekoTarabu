@@ -4,49 +4,81 @@ import {WaitLister} from "../models/wait-lister";
 import {MailService} from "../services/mail.service";
 import {response} from "express";
 import {AlertService} from "../services/alert.service";
+import {NgClass, NgIf} from "@angular/common";
+import {animate, state, style, transition, trigger} from "@angular/animations";
+import {Result} from "../models/result";
+import {HttpResponse} from "@angular/common/http";
 
 @Component({
   selector: 'app-contact',
   standalone: true,
   imports: [
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    NgIf,
+    NgClass
   ],
   templateUrl: './contact.component.html',
-  styleUrl: './contact.component.css'
+  styleUrl: './contact.component.css',
+  animations: [
+    trigger('fadeInOut', [
+      state('void', style({
+        opacity: 0
+      })),
+      transition(':enter, :leave', [
+        animate('500ms ease-in-out')
+      ])
+    ])
+  ]
 })
 export class ContactComponent {
-  waitListForm!:FormGroup
-  constructor(private formBuilder:FormBuilder,private mailService:MailService,private alertService:AlertService) {
+  waitListForm!: FormGroup
+  isFormSubmitted!: boolean;
+
+  constructor(private formBuilder: FormBuilder, private mailService: MailService, private alertService: AlertService) {
   }
-  ngOnInit(){
+
+  ngOnInit() {
     this.buildForm()
+    this.isFormSubmitted = false;
 
   }
 
   private buildForm() {
     this.waitListForm = new FormGroup({
-      name: new FormControl('',Validators.required),
-      email:new FormControl('',Validators.required),
-      message:new FormControl('')
+      name: new FormControl('', Validators.required),
+      email: new FormControl('', [Validators.required, Validators.email]),
+      message: new FormControl('')
     })
   }
 
   onSubmit() {
-   const waitLister:WaitLister = {id:0,name: this.waitListForm.get('name')?.value,hisHerMessage:this.waitListForm.get('message')?.value,
-     hisHerMail:this.waitListForm.get('email')?.value}
+    const waitLister: WaitLister = {
+      id: 0,
+      name: this.waitListForm.get('name')?.value,
+      hisHerMessage: this.waitListForm.get('message')?.value,
+      hisHerMail: this.waitListForm.get('email')?.value
+    };
 
-    console.log(waitLister.name,waitLister.id,waitLister.hisHerMail,waitLister.hisHerMessage);
+    this.isFormSubmitted = true;
+    setTimeout(() => {
+      this.isFormSubmitted = false;
+    }, 3000); // Hide after 3 seconds
 
-    this.mailService.sendMail(waitLister).subscribe(response => {
-
-      if([200,201].includes(response.status)){
-        this.alertService.success('All Right','Check your e-mail and your spam folder')
+    this.mailService.sendMail(waitLister).subscribe({
+      next: (response: HttpResponse<Result>) => {
+        const result:Result | null = response.body;
+        console.log(result)
+        if (result?.isSuccess) {
+          this.alertService.success('All Right', 'Check your e-mail and your spam folder');
+        } else if(!result?.isSuccess) {
+          if (result?.error.code == "Waitlister.UserExists") {
+            this.alertService.error('Oops', 'Looks like you are already subscribed to the waitlist')
+          }
+        }
+      },
+      error: (error: any) => {
+        console.log(error);
       }
-
-      else{
-       this.alertService.error('Uhh','There was a problem with the server')
-      }
-    })
-
+    });
   }
 }
