@@ -12,7 +12,7 @@ export class AlertService {
   getAlerts(){
     return this.alertSubject.asObservable();
   }
-  error(title: string, text: string) {
+  error(title: string | undefined, text: string | undefined) {
     const Toast = Swal.mixin({
       toast: true,
       position: 'top-end',

@@ -61,7 +61,7 @@ public class MailerService
         message.Subject = mailerMessage.Subject;
 
         // Construct the path to the HTML template file
-        string currentDirectory = Directory.GetCurrentDirectory();
+        string currentDirectory = AppContext.BaseDirectory;
         string templatePath = Path.Combine(currentDirectory, "Assets", "mail.html");
 
         // Ensure the template file exists

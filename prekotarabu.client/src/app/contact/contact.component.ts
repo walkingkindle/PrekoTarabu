@@ -71,13 +71,11 @@ export class ContactComponent {
         if (result?.isSuccess) {
           this.alertService.success('All Right', 'Check your e-mail and your spam folder');
         } else if(!result?.isSuccess) {
-          if (result?.error.code == "Waitlister.UserExists") {
-            this.alertService.error('Oops', 'Looks like you are already subscribed to the waitlist')
-          }
+          this.alertService.error(result?.error.code, result?.error.description);
         }
       },
       error: (error: any) => {
-        console.log(error);
+        this.alertService.error('Oops','Looks like there was a problem with our servers. Try again later?')
       }
     });
   }

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {HttpClient, HttpResponse} from "@angular/common/http";
-import {environment} from "../../environments/environment";
+import {environment} from "../../environments/environment.prod";
 import {WaitLister} from "../models/wait-lister";
 import {catchError, map, Observable} from "rxjs";
 import {ConfigService} from "./config.service";
